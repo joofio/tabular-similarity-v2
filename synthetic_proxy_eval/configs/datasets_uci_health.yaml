@@ -1,0 +1,254 @@
+# configs/datasets_uci_health.yaml
+# Drop this into your config (or merge into configs/base.yaml under `datasets:`)
+
+datasets:
+  - id: 296
+    name: "Diabetes 130-US hospitals (1999-2008)"
+    source: "UCI"
+    path: "data/diabetes+130-us+hospitals+for+years+1999-2008/diabetic_data.csv"
+    task_defs:
+      - id: readmitted_bin
+        target: "readmitted"
+        type: "binary_classification"
+        # Map raw labels to binary. Keep deterministic mapping.
+        label_map:
+          NO: 0
+          "<30": 1
+          ">30": 1
+        metrics: ["auroc", "auprc", "macro_f1", "balanced_accuracy", "brier"]
+      - id: time_in_hospital_reg
+        target: "time_in_hospital"
+        type: "regression"
+        metrics: ["mae", "rmse"]
+      - id: los_3class
+        # derived target; created by code in io.py/tasks.py
+        target: "__derived__:los_3class"
+        type: "multiclass_classification"
+        derived_from: "time_in_hospital"
+        # bins inclusive on left, exclusive on right; adjust if you prefer clinical cutoffs
+        bins: [0, 4, 8, 999]
+        labels: [0, 1, 2]
+        metrics: ["macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      # Keep explicit overrides to avoid treating coded categoricals as numeric.
+      # Anything not listed will be inferred.
+      categorical:
+        - "race"
+        - "gender"
+        - "age"
+        - "admission_type_id"
+        - "discharge_disposition_id"
+        - "admission_source_id"
+        - "payer_code"
+        - "medical_specialty"
+        - "diag_1"
+        - "diag_2"
+        - "diag_3"
+        - "max_glu_serum"
+        - "A1Cresult"
+        - "metformin"
+        - "repaglinide"
+        - "nateglinide"
+        - "chlorpropamide"
+        - "glimepiride"
+        - "acetohexamide"
+        - "glipizide"
+        - "glyburide"
+        - "tolbutamide"
+        - "pioglitazone"
+        - "rosiglitazone"
+        - "acarbose"
+        - "miglitol"
+        - "troglitazone"
+        - "tolazamide"
+        - "insulin"
+        - "glyburide-metformin"
+        - "glipizide-metformin"
+        - "glimepiride-pioglitazone"
+        - "metformin-rosiglitazone"
+        - "metformin-pioglitazone"
+        - "change"
+        - "diabetesMed"
+      numeric:
+        - "time_in_hospital"
+        - "num_lab_procedures"
+        - "num_procedures"
+        - "num_medications"
+        - "number_outpatient"
+        - "number_emergency"
+        - "number_inpatient"
+        - "number_diagnoses"
+    filters:
+      drop_columns:
+        # Identifiers, leakage-prone or unusable fields (edit as needed)
+        - "encounter_id"
+        - "patient_nbr"
+
+
+  - id: 336
+    name: "Chronic Kidney Disease"
+    source: "UCI"
+    path: "data/ckd/chronic_kidney_disease.csv"
+    task_defs:
+      - id: ckd_class
+        target: "class"
+        type: "binary_classification"
+        label_map:
+          ckd: 1
+          notckd: 0
+        metrics: ["auroc", "auprc", "macro_f1", "balanced_accuracy", "brier"]
+      - id: serum_creatinine_reg
+        target: "sc"
+        type: "regression"
+        metrics: ["mae", "rmse"]
+    schema:
+      categorical:
+        - "rbc"
+        - "pc"
+        - "pcc"
+        - "ba"
+        - "htn"
+        - "dm"
+        - "cad"
+        - "appet"
+        - "pe"
+        - "ane"
+      numeric:
+        - "age"
+        - "bp"
+        - "bgr"
+        - "bu"
+        - "sc"
+        - "sod"
+        - "pot"
+        - "hemo"
+        - "pcv"
+        - "wc"
+        - "rc"
+
+  - id: thyroid
+    name: "Thyroid disease (choose one UCI variant you have)"
+    source: "UCI"
+    path: "data/thyroid/thyroid.csv"
+    task_defs:
+      - id: thyroid_dx
+        target: "diagnosis"
+        type: "multiclass_classification"
+        metrics: ["macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      # Often mixed; keep override minimal unless you know columns
+      categorical: []
+      numeric: []
+
+
+  - id: 17
+    name: "Breast Cancer Wisconsin (Diagnostic)"
+    source: "UCI"
+    path: "data/breast_cancer_wdbc/wdbc.csv"
+    task_defs:
+      - id: bc_dx
+        target: "Diagnosis"
+        type: "binary_classification"
+        label_map:
+          M: 1
+          B: 0
+        metrics: ["auroc", "auprc", "macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      categorical: []
+      numeric: "__infer__"
+    filters:
+      drop_columns:
+        - "id"
+
+  - id: 83
+    name: "Primary Tumor"
+    source: "UCI"
+    path: "data/primary_tumor/primary_tumor.csv"
+    split:
+      stratify: false  # has rare classes that break stratified split
+    task_defs:
+      - id: tumor_site
+        target: "class"
+        type: "multiclass_classification"
+        metrics: ["macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      categorical: "__infer__"   # should become mostly categorical
+      numeric: []                # keep empty unless you know numeric cols
+
+  - id: 46
+    name: "Hepatitis"
+    source: "UCI"
+    path: "data/hepatitis/hepatitis.csv"
+    task_defs:
+      - id: hep_outcome
+        target: "Class"
+        type: "binary_classification"
+        # Typical UCI coding: 1=die, 2=live; adjust to your file
+        label_map:
+          1: 1
+          2: 0
+        metrics: ["auroc", "auprc", "macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      categorical: "__infer__"
+      numeric: "__infer__"
+
+  - id: 45
+    name: "Heart Disease (Cleveland)"
+    source: "UCI"
+    path: "data/heart_disease/cleveland.csv"
+    task_defs:
+      - id: hd_bin
+        target: "__derived__:hd_bin"
+        type: "binary_classification"
+        derived_from: "num"
+        # 0 -> 0, 1..4 -> 1
+        map_greater_than: {threshold: 0, out_if_leq: 0, out_if_gt: 1}
+        metrics: ["auroc", "auprc", "macro_f1", "balanced_accuracy", "brier"]
+    schema:
+      # Commonly: cp, restecg, slope, thal are categorical even if numeric-coded
+      categorical:
+        - "sex"
+        - "cp"
+        - "fbs"
+        - "restecg"
+        - "exang"
+        - "slope"
+        - "ca"
+        - "thal"
+      numeric:
+        - "age"
+        - "trestbps"
+        - "chol"
+        - "thalach"
+        - "oldpeak"
+
+# Global defaults the code should apply if dataset/task does not override
+defaults:
+  split:
+    test_size: 0.2
+    stratify: true
+    random_state: 0
+  proxy_metrics:
+    # the 9 required metrics (8 ranking + 1 string baseline)
+    rbo_p: [0.9, 0.95]
+    topk: [10, 20, 50]
+    metrics:
+      - "ndcg"
+      - "kendall_tau_b"
+      - "weighted_kendall_tau"
+      - "rbo"
+      - "spearman_footrule"
+      - "spearman_rho"
+      - "jaccard_at_k"
+      - "overlap_at_k"
+      - "levenshtein_baseline"
+  models:
+    # keep minimal by default; expand per dataset if needed
+    classification:
+      - "logreg_l2"
+      - "rf"
+      - "hgb"
+    regression:
+      - "ridge"
+      - "rf"
+      - "hgb"

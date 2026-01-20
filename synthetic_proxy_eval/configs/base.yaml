@@ -1,0 +1,43 @@
+include_datasets: "datasets_uci_health.yaml"
+
+
+
+seed: 42
+split:
+  test_size: 0.2
+  stratify: true
+preprocess:
+  scaler: "standard"  # "standard", "minmax", or "none"
+  n_repeats_importance: 5
+  importance_scoring: "auto"
+generators:
+  seeds: [0, 1, 2]
+  sizes: [0.5, 1.0]
+  output_dir: "synthetic"
+utility:
+  models: ["logreg", "rf"]
+  eps: 1.0e-8
+  task_type: "auto"
+proxy_metrics:
+  ndcg_ks: [10, 20, 50]
+  rbo_ps: [0.9, 0.95]
+  overlap_ks: [10, 20, 50]
+  jaccard_ks: [10, 20, 50]
+fidelity:
+  propensity:
+    test_size: 0.3
+    max_iter: 500
+stats:
+  bootstrap:
+    n_resamples: 200
+    seed: 123
+  acceptable_delta_u: 0.02
+  precision_target: 0.95
+  invariance_epsilon: 0.01
+  sensitivity_lambdas: [0.0, 0.25, 0.5, 0.75, 1.0]
+reporting:
+  save_plots: true
+  figure_dpi: 150
+
+
+
