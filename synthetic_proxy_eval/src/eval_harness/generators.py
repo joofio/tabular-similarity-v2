@@ -205,7 +205,7 @@ class TVAELikeGenerator(SynthGenerator):
         if self._gmm is None:
             labels = np.zeros(n, dtype=int)
         else:
-            samples, labels = self._gmm.sample(n, random_state=seed)
+            samples, labels = self._gmm.sample(n)
             for idx, col in enumerate(self._numeric_cols):
                 parts[col] = pd.Series(samples[:, idx])
 
