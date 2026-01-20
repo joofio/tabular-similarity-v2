@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Iterable
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 
@@ -78,6 +77,43 @@ def _plot_metric(
     plt.close(fig)
 
 
+def _print_analysis(dataset_name: str, stats: pd.DataFrame) -> None:
+    """Print a textual analysis of metric quality based on Spearman correlation."""
+    print(f"\n=== Analysis for Dataset: {dataset_name} ===")
+
+    if "spearman" not in stats.columns:
+        print("Stats file does not contain 'spearman' column.")
+        return
+
+    # Filter valid spearman
+    df = stats.dropna(subset=["spearman"]).copy()
+    if df.empty:
+        print("No valid Spearman correlations found.")
+        return
+
+    # Sort by absolute correlation
+    df["abs_spearman"] = df["spearman"].abs()
+    df = df.sort_values("abs_spearman", ascending=False)
+
+    print(f"{'Metric':<35} {'Spearman':>10}   {'Verdict':<10}")
+    print("-" * 60)
+
+    for _, row in df.iterrows():
+        metric = str(row["metric"])
+        spearman = float(row["spearman"])
+        abs_sp = abs(spearman)
+
+        if abs_sp >= 0.7:
+            verdict = "GOOD"
+        elif abs_sp >= 0.4:
+            verdict = "FAIR"
+        else:
+            verdict = "BAD"
+
+        print(f"{metric:<35} {spearman:>10.3f}   {verdict:<10}")
+    print("-" * 60)
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build CLI parser."""
     parser = argparse.ArgumentParser(description="Plot top proxy metrics vs delta-U.")
@@ -123,10 +159,15 @@ def main(argv: list[str] | None = None) -> None:
 
         dataset_name = dataset_dir.name
         dataset_outdir = outdir / dataset_name
+
+        _print_analysis(dataset_name, stats)
+
         for _, row in top.iterrows():
             metric = str(row["metric"])
             spearman = float(row["spearman"])
-            _plot_metric(dataset_name, metric, summary, spearman, dataset_outdir, args.dpi)
+            _plot_metric(
+                dataset_name, metric, summary, spearman, dataset_outdir, args.dpi
+            )
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@ from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
     roc_auc_score,
+    root_mean_squared_error,
 )
 from sklearn.preprocessing import LabelEncoder, label_binarize
 
@@ -75,7 +76,7 @@ def _evaluate_regression(
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     mae = mean_absolute_error(y_test, preds)
-    rmse = mean_squared_error(y_test, preds, squared=False)
+    rmse = root_mean_squared_error(y_test, preds)
     return {"mae": float(mae), "rmse": float(rmse)}
 
 

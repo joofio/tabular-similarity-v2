@@ -172,7 +172,26 @@ datasets:
         type: "multiclass_classification"
         metrics: ["macro_f1", "balanced_accuracy", "brier"]
     schema:
-      categorical: "__infer__"   # should become mostly categorical
+      categorical: 
+        - "class"
+        - "age"
+        - "sex"
+        - "histologic-type"
+        - "degree-of-diffe"
+        - "bone"
+        - "bone-marrow"
+        - "lung"
+        - "pleura"
+        - "peritoneum"
+        - "liver"
+        - "brain"
+        - "skin"
+        - "neck"
+        - "supraclavicular"
+        - "axillar"
+        - "mediastinum"
+        - "abdominal"
+
       numeric: []                # keep empty unless you know numeric cols
 
   - id: 46

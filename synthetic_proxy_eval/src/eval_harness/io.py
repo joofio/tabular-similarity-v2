@@ -198,7 +198,7 @@ def load_dataset(
     task_type: str = "auto",
 ) -> Tuple[pd.DataFrame, Schema]:
     """Load CSV dataset and infer schema."""
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, low_memory=False)
     schema = infer_schema(df, target=target, override=schema_override, task_type=task_type)
     return df, schema
 
@@ -223,7 +223,7 @@ def load_dataset_from_config(
         path = os.path.join(data_root, path)
 
     # Load CSV
-    df = pd.read_csv(path)
+    df = pd.read_csv(path, low_memory=False)
 
     # Apply filters (drop_columns, etc.)
     df = apply_filters(df, entry.get("filters"))
