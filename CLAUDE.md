@@ -7,15 +7,16 @@
 ## Table of Contents
 
 1. [Project Overview](#project-overview)
-2. [Codebase Structure](#codebase-structure)
-3. [Architecture & Design Principles](#architecture--design-principles)
-4. [Development Workflow](#development-workflow)
-5. [Key Conventions & Patterns](#key-conventions--patterns)
-6. [Testing Guidelines](#testing-guidelines)
-7. [Configuration Management](#configuration-management)
-8. [Common Tasks](#common-tasks)
-9. [Git Workflow](#git-workflow)
-10. [Troubleshooting](#troubleshooting)
+2. [Shell Environment & CLI Tools](#shell-environment--cli-tools)
+3. [Codebase Structure](#codebase-structure)
+4. [Architecture & Design Principles](#architecture--design-principles)
+5. [Development Workflow](#development-workflow)
+6. [Key Conventions & Patterns](#key-conventions--patterns)
+7. [Testing Guidelines](#testing-guidelines)
+8. [Configuration Management](#configuration-management)
+9. [Common Tasks](#common-tasks)
+10. [Git Workflow](#git-workflow)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -44,6 +45,353 @@ Synthetic Proxy Eval is a Python evaluation harness that validates proxy metrics
 - **Testing:** pytest
 - **Build System:** setuptools (pyproject.toml)
 - **Package Name:** synthetic-proxy-eval v0.1.0
+
+---
+
+## Shell Environment & CLI Tools
+
+### Primary Development Platform
+
+**Operating System:** macOS
+**Shell:** zsh (default on macOS)
+
+### Modern CLI Tools Installed
+
+This project is developed using modern CLI tools that enhance the command-line experience. AI assistants should be aware of these tools when suggesting commands or interacting with the filesystem.
+
+#### Core Modern CLI Tools
+
+| Tool | Purpose | Replaces | Usage |
+|------|---------|----------|-------|
+| **eza** | Modern `ls` replacement | `ls` | Directory listings with better formatting and git integration |
+| **zoxide** | Smart directory navigation | `cd` | Jump to frequently/recently used directories |
+| **fzf** | Fuzzy finder | - | Interactive filtering for files, history, and commands |
+| **bat** (if installed) | `cat` with syntax highlighting | `cat` | View files with syntax highlighting |
+| **ripgrep (rg)** (if installed) | Fast grep alternative | `grep` | Fast text search (already used by Grep tool) |
+| **fd** (if installed) | `find` alternative | `find` | Fast file finding |
+
+### Tool-Specific Behavior
+
+#### eza (Modern ls)
+
+When listing directories, you may encounter `eza` output format:
+
+```bash
+# Standard usage
+eza                          # List files (colorized, git-aware)
+eza -l                       # Long format with metadata
+eza -la                      # Include hidden files
+eza -lh                      # Human-readable sizes
+eza -T                       # Tree view
+eza -T --git-ignore         # Tree view respecting .gitignore
+
+# Common aliases (may be configured)
+alias ls='eza'
+alias ll='eza -l'
+alias la='eza -la'
+alias lt='eza -T'
+```
+
+**Key Features:**
+- Git integration (shows git status of files)
+- Color-coded file types
+- Icons for file types (if terminal supports it)
+- Better default sorting
+
+#### zoxide (Smart cd)
+
+Allows jumping to directories based on frecency (frequency + recency):
+
+```bash
+# Jump to a directory you've visited before
+z tabular              # Jumps to tabular-similarity-v2 directory
+z eval                 # Jumps to synthetic_proxy_eval directory
+z test                 # Jumps to tests directory
+
+# Interactive selection with fzf
+zi                     # Interactive directory selection
+
+# Traditional cd still works
+cd /full/path/to/directory
+```
+
+**How it Works:**
+- Tracks directories you visit
+- Ranks them by how often and recently you've used them
+- Allows fuzzy matching on directory names
+- Database stored in `~/.local/share/zoxide/`
+
+**Important for AI Assistants:**
+- When suggesting directory navigation, both `cd` and `z` commands work
+- `z` is more efficient for frequently used directories
+- Always provide full paths in scripts for portability
+
+#### fzf (Fuzzy Finder)
+
+Interactive fuzzy search for files, commands, and more:
+
+```bash
+# Find files interactively
+fzf                          # Search files in current directory
+
+# Search command history
+Ctrl+R                       # Reverse search through history (enhanced by fzf)
+
+# Search and open files
+vim $(fzf)                   # Select file with fzf, open in vim
+
+# Preview files while searching
+fzf --preview 'bat --color=always {}'
+
+# Integration with other tools
+z --interactive              # zoxide + fzf integration
+git log --oneline | fzf     # Search git commits interactively
+```
+
+**Key Features:**
+- Fuzzy matching (type "tst" to find "test_generators.py")
+- Multi-select mode (Tab to select multiple items)
+- Preview window support
+- Highly customizable
+
+### Shell Configuration Awareness
+
+#### Common Aliases (May Be Present)
+
+```bash
+# File operations
+alias ls='eza'
+alias ll='eza -l'
+alias la='eza -la'
+alias lt='eza -T'
+alias cat='bat'               # If bat is installed
+
+# Directory navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Git shortcuts
+alias g='git'
+alias gs='git status'
+alias gd='git diff'
+alias ga='git add'
+alias gc='git commit'
+alias gp='git push'
+alias gl='git log --oneline'
+
+# Python/Development
+alias py='python3'
+alias ipy='ipython'
+alias venv='python3 -m venv'
+```
+
+#### Environment Variables
+
+Common macOS environment variables:
+
+```bash
+# Home directory
+$HOME                        # /Users/username
+~                            # Shorthand for $HOME
+
+# Python
+$PATH                        # Includes Homebrew, Python, pip paths
+$PYTHONPATH                  # Python module search path
+
+# Development tools
+$EDITOR                      # Default text editor (vim, nano, code, etc.)
+```
+
+### Best Practices for AI Assistants
+
+#### When Suggesting Commands
+
+1. **Prefer Standard Commands in Documentation**: Use `ls`, `cd`, `cat` in written documentation for portability
+2. **Use Modern Tools When Available**: In interactive sessions, you can suggest modern alternatives
+3. **Provide Fallbacks**: If suggesting a modern tool, mention the standard alternative
+
+```bash
+# GOOD: Provide both options
+# Using eza (or ls if eza not available)
+eza -la synthetic/
+# OR
+ls -lah synthetic/
+
+# GOOD: Standard commands work everywhere
+ls -lah synthetic/
+
+# AVOID: Assuming tools without fallback
+eza -la synthetic/  # May not work on all systems
+```
+
+#### Directory Navigation
+
+```bash
+# GOOD: Use absolute paths in scripts
+cd /home/user/tabular-similarity-v2/synthetic_proxy_eval
+
+# GOOD: Relative paths for interactive use
+cd synthetic_proxy_eval
+
+# OK: Modern tools for convenience (but document the standard way)
+z eval  # Fast jump with zoxide
+```
+
+#### File Operations
+
+When working with this repository:
+
+```bash
+# Listing Python modules
+eza -1 src/eval_harness/*.py        # Modern
+ls src/eval_harness/*.py            # Standard
+
+# Finding test files
+fd test_ tests/                     # Modern (if fd installed)
+find tests/ -name "test_*.py"       # Standard (always works)
+
+# Searching code
+rg "def compute_delta_u"            # Modern (ripgrep)
+grep -r "def compute_delta_u" src/  # Standard
+```
+
+### macOS-Specific Considerations
+
+#### Filesystem Differences
+
+```bash
+# Case-insensitive by default (but case-preserving)
+# MyFile.py and myfile.py are the same file on macOS
+
+# Hidden files start with dot
+ls -a          # Show hidden files including .git, .gitignore
+
+# macOS metadata files
+.DS_Store      # Finder metadata (add to .gitignore)
+```
+
+#### Package Management
+
+```bash
+# Homebrew (likely installed)
+brew install <package>              # Install packages
+brew list                           # List installed packages
+brew update                         # Update Homebrew
+brew upgrade                        # Upgrade packages
+
+# Python via Homebrew or python.org
+python3 --version                   # Check Python version
+pip3 install <package>              # Install Python packages
+```
+
+#### Python Environment
+
+```bash
+# Default Python 3 on macOS
+python3                             # Use python3, not python
+pip3                                # Use pip3, not pip
+
+# Virtual environment location
+.venv/                              # Typical location for venv
+venv/                               # Alternative
+
+# Activating virtual environment
+source .venv/bin/activate           # bash/zsh
+source venv/bin/activate            # Alternative location
+```
+
+### Project-Specific Shell Commands
+
+#### Quick Navigation with zoxide
+
+```bash
+# Jump to project root
+z tabular
+
+# Jump to source code
+z eval_harness
+cd src/eval_harness              # Standard alternative
+
+# Jump to tests
+z tests
+cd tests/                        # Standard alternative
+```
+
+#### Common Workflows
+
+```bash
+# Setup development environment
+cd ~/tabular-similarity-v2/synthetic_proxy_eval
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+# Run tests with modern tools
+pytest -v                        # Standard
+fzf < tests/test_*.py | xargs pytest  # Interactive file selection
+
+# Search for functions
+rg "def compute_" src/          # Fast search
+grep -r "def compute_" src/     # Standard alternative
+
+# View results
+eza -T runs/exp1/               # Tree view of results
+ls -R runs/exp1/                # Standard recursive listing
+```
+
+#### File Exploration
+
+```bash
+# Browse code with tree view
+eza -T src/eval_harness/        # Modern
+tree src/eval_harness/          # Traditional (if installed)
+find src/eval_harness -type f   # Standard
+
+# Interactive file browsing
+fzf --preview 'bat --color=always --style=numbers {}'
+
+# Git-aware file listing
+eza -la --git                   # Shows git status alongside files
+```
+
+### Shell Script Compatibility
+
+When writing shell scripts for this project:
+
+```bash
+#!/usr/bin/env bash
+# Use bash for portability, not zsh-specific features
+
+# Prefer standard commands
+# GOOD:
+find tests/ -name "*.py" -exec pytest {} +
+
+# AVOID (modern tools may not be available):
+fd "\.py$" tests/ --exec pytest
+```
+
+### Terminal Features
+
+macOS Terminal/iTerm2 capabilities:
+
+- **Tabs**: Cmd+T for new tab
+- **Split Panes**: Cmd+D (vertical), Cmd+Shift+D (horizontal) in iTerm2
+- **Command History**: Up/Down arrows, Ctrl+R for reverse search
+- **Copy/Paste**: Cmd+C, Cmd+V
+- **Clear Screen**: Cmd+K or `clear` command
+
+### Quick Reference for Common Operations
+
+| Task | Modern Command | Standard Command |
+|------|----------------|------------------|
+| List files | `eza -la` | `ls -lah` |
+| Navigate | `z dirname` | `cd /path/to/dirname` |
+| Find files | `fd pattern` | `find . -name pattern` |
+| Search code | `rg pattern` | `grep -r pattern` |
+| View file | `bat file.py` | `cat file.py` or `less file.py` |
+| Tree view | `eza -T` | `tree` or `find . -print` |
+| Interactive search | `fzf` | N/A (use `ls \| grep`) |
 
 ---
 
@@ -898,7 +1246,8 @@ git push -u origin <branch>              # Push to branch
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** 2026-01-20
+**Last Updated:** 2026-01-20
 **For:** AI Assistants working with tabular-similarity-v2
 **Maintainer:** Auto-generated by Claude Code
