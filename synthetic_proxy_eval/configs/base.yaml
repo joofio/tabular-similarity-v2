@@ -15,7 +15,7 @@ generators:
   sizes: [0.5, 1.0]
   output_dir: "synthetic"
 utility:
-  models: ["logreg", "rf"]
+  models: ["logreg", "rf", "gb", "knn", "ridge", "gbr"]
   eps: 1.0e-8
   task_type: "auto"
 proxy_metrics:
@@ -38,6 +38,5 @@ stats:
 reporting:
   save_plots: true
   figure_dpi: 150
-
 
 
