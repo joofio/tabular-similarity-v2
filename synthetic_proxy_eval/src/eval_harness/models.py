@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from typing import Dict
 
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import (
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+    RandomForestClassifier,
+    RandomForestRegressor,
+)
 from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 
 
 def get_models(task_type: str, seed: int) -> Dict[str, object]:
@@ -21,6 +27,8 @@ def get_models(task_type: str, seed: int) -> Dict[str, object]:
                 n_estimators=100,
                 random_state=seed,
             ),
+            "gb": GradientBoostingClassifier(random_state=seed),
+            "knn": KNeighborsClassifier(n_neighbors=7),
         }
     if task_type == "regression":
         return {
@@ -29,5 +37,7 @@ def get_models(task_type: str, seed: int) -> Dict[str, object]:
                 n_estimators=100,
                 random_state=seed,
             ),
+            "gbr": GradientBoostingRegressor(random_state=seed),
+            "knn": KNeighborsRegressor(n_neighbors=7),
         }
     raise ValueError(f"Unknown task type: {task_type}")

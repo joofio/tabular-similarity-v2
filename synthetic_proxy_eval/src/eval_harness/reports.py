@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List
 
 import os
 
@@ -10,6 +10,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 
@@ -106,5 +107,115 @@ def write_reports(
             plot_scatter(summary, f"proxy_{metric}_median", os.path.join(plot_dir, "scatter.png"))
         if "lambda" in proxy_long.columns and not proxy_long.empty:
             plot_degradation(proxy_long, os.path.join(plot_dir, "degradation.png"))
+
+    return outputs
+
+
+def _read_csv(path: str) -> pd.DataFrame:
+    """Read a CSV file into a dataframe."""
+    return pd.read_csv(path)
+
+
+def _collect_dataset_paths(parent_outdir: str) -> List[str]:
+    """Collect dataset output directories (excluding aggregate)."""
+    dirs = []
+    for entry in os.listdir(parent_outdir):
+        full_path = os.path.join(parent_outdir, entry)
+        if entry == "aggregate":
+            continue
+        if os.path.isdir(full_path):
+            dirs.append(full_path)
+    return sorted(dirs)
+
+
+def _aggregate_summary(summary_all: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate summary metrics across datasets."""
+    group_cols = ["generator", "size"]
+    metric_cols = [
+        col
+        for col in summary_all.columns
+        if col not in group_cols + ["dataset_id", "seed", "source_dataset"]
+        and np.issubdtype(summary_all[col].dtype, np.number)
+    ]
+    agg_df = (
+        summary_all.groupby(group_cols)[metric_cols]
+        .median()
+        .reset_index()
+        .rename(columns={col: f"{col}_median" for col in metric_cols})
+    )
+    counts = summary_all.groupby(group_cols).agg(
+        dataset_count=("source_dataset", "nunique"),
+        synth_count=("dataset_id", "count"),
+    )
+    agg_df = agg_df.merge(counts.reset_index(), on=group_cols, how="left")
+    return agg_df
+
+
+def aggregate_reports(parent_outdir: str) -> Dict[str, str]:
+    """Aggregate results across multiple dataset runs."""
+    dataset_dirs = _collect_dataset_paths(parent_outdir)
+    if not dataset_dirs:
+        return {}
+
+    summary_frames = []
+    utility_frames = []
+    proxy_frames = []
+    fidelity_frames = []
+    stats_frames = []
+
+    for dataset_dir in dataset_dirs:
+        dataset_id = os.path.basename(dataset_dir)
+        summary_path = os.path.join(dataset_dir, "summary.csv")
+        if not os.path.exists(summary_path):
+            continue
+
+        summary = _read_csv(summary_path)
+        summary["source_dataset"] = dataset_id
+        summary_frames.append(summary)
+
+        for name, collector in [
+            ("utility_long.csv", utility_frames),
+            ("proxy_long.csv", proxy_frames),
+            ("fidelity.csv", fidelity_frames),
+            ("stats.csv", stats_frames),
+        ]:
+            path = os.path.join(dataset_dir, name)
+            if os.path.exists(path):
+                df = _read_csv(path)
+                df["source_dataset"] = dataset_id
+                collector.append(df)
+
+    if not summary_frames:
+        return {}
+
+    summary_all = pd.concat(summary_frames, ignore_index=True)
+    utility_all = pd.concat(utility_frames, ignore_index=True) if utility_frames else pd.DataFrame()
+    proxy_all = pd.concat(proxy_frames, ignore_index=True) if proxy_frames else pd.DataFrame()
+    fidelity_all = pd.concat(fidelity_frames, ignore_index=True) if fidelity_frames else pd.DataFrame()
+    stats_all = pd.concat(stats_frames, ignore_index=True) if stats_frames else pd.DataFrame()
+
+    agg_dir = os.path.join(parent_outdir, "aggregate")
+    ensure_dir(agg_dir)
+
+    outputs: Dict[str, str] = {}
+    outputs["summary_all"] = os.path.join(agg_dir, "summary_all.csv")
+    save_csv(summary_all, outputs["summary_all"])
+
+    if not utility_all.empty:
+        outputs["utility_all"] = os.path.join(agg_dir, "utility_all.csv")
+        save_csv(utility_all, outputs["utility_all"])
+    if not proxy_all.empty:
+        outputs["proxy_all"] = os.path.join(agg_dir, "proxy_all.csv")
+        save_csv(proxy_all, outputs["proxy_all"])
+    if not fidelity_all.empty:
+        outputs["fidelity_all"] = os.path.join(agg_dir, "fidelity_all.csv")
+        save_csv(fidelity_all, outputs["fidelity_all"])
+    if not stats_all.empty:
+        outputs["stats_all"] = os.path.join(agg_dir, "stats_all.csv")
+        save_csv(stats_all, outputs["stats_all"])
+
+    aggregated_summary = _aggregate_summary(summary_all)
+    outputs["summary_aggregated"] = os.path.join(agg_dir, "summary_aggregated.csv")
+    save_csv(aggregated_summary, outputs["summary_aggregated"])
 
     return outputs

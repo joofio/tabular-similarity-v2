@@ -6,6 +6,7 @@ import argparse
 import os
 import sys
 
+from eval_harness import reports
 from eval_harness.experiments import run_pipeline, run_pipeline_from_config
 from eval_harness.io import load_config
 
@@ -111,6 +112,11 @@ def main(argv: list[str] | None = None) -> None:
             print(f"\nError processing dataset {dataset_id}: {e}", file=sys.stderr)
             if not args.all:
                 sys.exit(1)
+
+    if args.all:
+        aggregate_outputs = reports.aggregate_reports(args.outdir)
+        if aggregate_outputs:
+            print(f"\nAggregated reports written to {os.path.join(args.outdir, 'aggregate')}")
 
 
 if __name__ == "__main__":
